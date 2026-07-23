@@ -231,16 +231,75 @@
     color:rgba(255,255,255,0.6);
   }
   .game-frame{
-    width:min(720px,92vw);
-    aspect-ratio:16/9;
-    border:2px solid rgba(255,255,255,0.4);
-    border-radius:10px;
-    background:
-      repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 6px),
-      linear-gradient(to bottom, #4a2a7a, #1c0e35);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Courier New',monospace;letter-spacing:0.1em;
-    color:rgba(255,255,255,0.55);font-size:13px;
+    position:relative;
+    width:min(720px,94vw);
+    aspect-ratio:240/135;
+    border:3px solid rgba(255,255,255,0.55);
+    border-radius:6px;
+    overflow:hidden;
+    background:#0b2a7a;
+    box-shadow:0 0 0 4px #10231a, 0 14px 30px rgba(0,0,0,0.5);
+    touch-action:manipulation;
+    user-select:none;
+  }
+  #game{
+    position:absolute;inset:0;
+    width:100%;height:100%;display:block;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+  .game-overlay{
+    position:absolute;inset:0;z-index:5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;text-align:center;padding:24px;
+    background:rgba(10,6,26,0.82);
+    font-family:'Courier New',monospace;
+  }
+  .game-overlay[hidden]{ display:none; }
+  .go-title{
+    font-size:clamp(20px,4vw,34px);font-weight:700;letter-spacing:0.14em;
+    text-transform:uppercase;color:#fff;
+    text-shadow:3px 3px 0 #e8433d;
+  }
+  .go-sub{
+    font-size:12px;letter-spacing:0.18em;text-transform:uppercase;
+    color:rgba(255,255,255,0.75);
+  }
+  .go-score{
+    font-size:clamp(28px,7vw,52px);font-weight:700;color:#7CFF6B;
+    text-shadow:3px 3px 0 #0a1f12;letter-spacing:0.05em;line-height:1;
+  }
+  .go-score small{
+    display:block;font-size:12px;letter-spacing:0.2em;color:rgba(255,255,255,0.7);
+    margin-top:6px;text-shadow:none;
+  }
+  .go-gift{
+    max-width:520px;font-size:clamp(13px,2.4vw,16px);line-height:1.55;
+    color:#ffd9a0;letter-spacing:0.02em;
+    border-top:1px dashed rgba(255,255,255,0.3);
+    border-bottom:1px dashed rgba(255,255,255,0.3);
+    padding:14px 6px;
+  }
+  .btn{
+    font-family:'Courier New',monospace;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.12em;font-size:14px;
+    background:#7CFF6B;color:#10231a;border:none;padding:13px 24px;cursor:pointer;
+    box-shadow:4px 4px 0 #0a1f12;
+  }
+  .btn:active{ transform:translate(2px,2px);box-shadow:2px 2px 0 #0a1f12; }
+  .big-banner{
+    position:absolute;left:50%;top:16px;transform:translateX(-50%) scale(0.9);
+    z-index:6;width:88%;max-width:560px;
+    background:#e8433d;color:#fff;border:3px solid #fff;
+    box-shadow:5px 5px 0 rgba(0,0,0,0.4);
+    font-family:'Courier New',monospace;font-size:clamp(12px,2.3vw,15px);
+    line-height:1.5;padding:12px 16px;text-align:center;letter-spacing:0.02em;
+    opacity:0;pointer-events:none;transition:opacity 0.25s, transform 0.25s;
+  }
+  .big-banner.show{ opacity:1;transform:translateX(-50%) scale(1); }
+  .game-hint{
+    font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.16em;
+    text-transform:uppercase;color:rgba(255,255,255,0.55);margin-top:2px;
   }
 
   @media (max-width:780px){
@@ -473,8 +532,325 @@
 
   <section class="session" id="session">
     <h2>— The Session —</h2>
-    <div class="game-frame">SESSION LOADING SOON…</div>
+    <div class="game-frame" id="gameFrame">
+      <canvas id="game" width="240" height="135"></canvas>
+
+      <div class="big-banner" id="bigBanner"></div>
+
+      <div class="game-overlay" id="startOverlay">
+        <div class="go-title">Barney's Surf School</div>
+        <div class="go-sub">Dodge the crew. Stay on the wave.</div>
+        <button class="btn" id="startBtn">Start Session</button>
+        <div class="go-sub">Space / Tap to pop up</div>
+      </div>
+
+      <div class="game-overlay" id="overOverlay" hidden>
+        <div class="go-title">Session Over</div>
+        <div class="go-score"><span id="finalScore">0</span><small>surfers dodged</small></div>
+        <div class="go-gift" id="giftText"></div>
+        <button class="btn" id="againBtn">Play Again</button>
+      </div>
+    </div>
+    <div class="game-hint">SPACE / ↑ / TAP TO POP UP OVER A SURFER</div>
   </section>
+
+  <script>
+  (function(){
+    const cv = document.getElementById('game');
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    ctx.imageSmoothingEnabled = false;
+
+    const frame       = document.getElementById('gameFrame');
+    const startOv     = document.getElementById('startOverlay');
+    const overOv      = document.getElementById('overOverlay');
+    const startBtn    = document.getElementById('startBtn');
+    const againBtn    = document.getElementById('againBtn');
+    const finalScoreEl= document.getElementById('finalScore');
+    const giftEl      = document.getElementById('giftText');
+    const banner      = document.getElementById('bigBanner');
+
+    const GIFT = "Happy birthday — we got you a new lady waiting for you in Cape Town. " +
+                 "She's not German and she's not a climber, but she does love a salty glide. " +
+                 "You two are going to grow old together. 🌊";
+    giftEl.textContent = GIFT;
+
+    // ---- roster (order preserved; parents merged into one bubble) ----
+    const ROSTER = [
+      {label:'MIKEY L', girl:false},
+      {label:'MIKEY H', girl:false},
+      {label:'MURRAY',  girl:false},
+      {label:'CARA',    girl:true},
+      {label:'HANNAH',  girl:true},
+      {label:'ALI',     girl:false},
+      {label:'BEN',     girl:false},
+      {label:'DAN M',   girl:false},
+      {label:'MATT M',  girl:false},
+      {label:'RYAN',    girl:false},
+      {label:'JEAN',    girl:false},
+      {label:'CARA',    girl:true},
+      {label:'JOSH',    girl:false},
+      {label:'DAVI',    girl:false},
+      {label:'CASS',    girl:true},
+      {label:'MIKEY P', girl:false},
+      {label:'JANINE & LANI', girl:true, tag:'THE PARENTS'},
+      {label:'CAITLIN', girl:true, tag:'THE SISTER'},
+    ];
+    const HAIRS  = ['#3a2416','#6b4a1f','#111015','#c46b2a','#5a3a12'];
+    const BOARDS = ['#ff8a1e','#e8433d','#ffd35c','#2ee0c0','#ff5fa2','#8be04a'];
+    const SUITS  = ['#1b2f6e','#0a0a12','#12894f','#b0342f','#5a2f9e'];
+
+    function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+    // ---- game state ----
+    const BASE = 100;           // board-top y (baseline)
+    const BX   = 44;            // barney board left
+    const GRAV = 0.42, JUMPV = 5.6;
+    let state='ready', score=0, speed=1.4, h=0, vh=0, onGround=true;
+    let obstacles=[], splash=[], queue=[], distToSpawn=0, crashT=0, foam=0, t0=0, bannerTimer=0;
+
+    function reset(){
+      score=0; speed=1.4; h=0; vh=0; onGround=true;
+      obstacles=[]; splash=[]; queue=shuffle(ROSTER); distToSpawn=70; crashT=0; foam=0;
+      banner.classList.remove('show'); bannerTimer=0;
+    }
+    function startGame(){ reset(); state='play'; startOv.hidden=true; overOv.hidden=true; }
+    function jump(){ if(onGround){ vh=JUMPV; onGround=false; } }
+
+    function spawn(){
+      obstacles.push({
+        x: W+8,
+        hair: HAIRS[(Math.random()*HAIRS.length)|0],
+        board: BOARDS[(Math.random()*BOARDS.length)|0],
+        suit: SUITS[(Math.random()*SUITS.length)|0],
+        scored:false, bubble:null
+      });
+    }
+    function nextName(obst){
+      if(queue.length===0){ showBanner(); queue=shuffle(ROSTER); }
+      const it = queue.shift();
+      obst.bubble = { text: it.label+'!', tag: it.tag||null, ttl: 80 };
+    }
+    function showBanner(){ banner.textContent = GIFT; banner.classList.add('show'); bannerTimer=300; }
+
+    // ---- drawing helpers ----
+    function R(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w|0,h|0); }
+
+    function drawBackground(){
+      // sky
+      R(0,0,W,30,'#63d7ff');
+      // clouds (static)
+      R(30,8,16,5,'#ffffff'); R(26,11,24,4,'#ffffff');
+      R(150,6,18,5,'#ffffff'); R(146,9,26,4,'#ffffff');
+      // wave wall bands
+      R(0,30,W,16,'#1f6fe0');
+      R(0,46,W,16,'#29c7e8');
+      R(0,62,W,16,'#1f6fe0');
+      R(0,78,W,16,'#155cc9');
+      // scrolling foam speckle on the wall
+      for(let i=0;i<44;i++){
+        const sx = ((i*53 - foam*0.6) % (W+10) + W+10) % (W+10) - 5;
+        const sy = 34 + ((i*29)%56);
+        R(sx, sy, 2, 2, '#8ff0ff');
+      }
+      // crest foam line (where riders sit)
+      R(0,94,W,3,'#bff6ff');
+      R(0,97,W,3,'#ffffff');
+      for(let i=0;i<30;i++){
+        const sx = ((i*22 - foam) % (W+8) + W+8) % (W+8) - 4;
+        R(sx, 95, 6, 2, '#ffffff');
+      }
+      // deep trough water
+      R(0,100,W,H-100,'#0e2f8f');
+      for(let i=0;i<26;i++){
+        const sx = ((i*31 - foam*1.3) % (W+8) + W+8) % (W+8) - 4;
+        const sy = 104 + ((i*17)%26);
+        R(sx, sy, 5, 2, '#1f6fe0');
+      }
+      // big breaking curl on the right
+      drawCurl();
+    }
+
+    function drawCurl(){
+      const bx=182;
+      R(bx,30,W-bx,70,'#8ff0ff');
+      R(bx+8,30,W-bx-8,66,'#ffffff');
+      R(bx-6,44,12,52,'#bff6ff');
+      // curl lip
+      R(bx-10,40,10,8,'#ffffff');
+      R(bx-14,46,8,8,'#bff6ff');
+      // spray dots
+      for(let i=0;i<26;i++){
+        const px = bx-16 + ((i*37 + foam*0.4)% (W-bx+16));
+        const py = 30 + ((i*13)%64);
+        R(px,py,2,2, (i%2? '#ffffff':'#8ff0ff'));
+      }
+    }
+
+    function drawBarney(cx, footY, crash){
+      if(crash){
+        // wiped-out: splash + tumbled dino
+        R(cx-2,footY-4,24,6,'#e8433d');            // busted board
+        R(cx+6,footY-14,11,11,'#a24be0');          // body
+        R(cx+9,footY-11,6,7,'#35d15a');
+        R(cx+4,footY-16,6,6,'#a24be0');            // head low
+        R(cx+5,footY-15,2,2,'#1c1024'); R(cx+8,footY-15,2,2,'#1c1024'); // X-ish eyes
+        return;
+      }
+      // longboard
+      R(cx,footY,24,3,'#ff8a1e'); R(cx+2,footY+1,20,1,'#ffd35c');
+      // feet
+      R(cx+7,footY-3,3,3,'#6f2fb0'); R(cx+14,footY-3,3,3,'#6f2fb0');
+      // tail
+      R(cx+2,footY-9,5,3,'#6f2fb0');
+      // body + belly
+      R(cx+6,footY-14,11,11,'#a24be0');
+      R(cx+9,footY-11,6,8,'#35d15a');
+      // arm
+      R(cx+12,footY-10,3,4,'#6f2fb0');
+      // head + snout
+      R(cx+13,footY-21,9,8,'#a24be0');
+      R(cx+20,footY-18,4,3,'#a24be0');
+      // eye
+      R(cx+17,footY-19,2,2,'#ffffff'); R(cx+18,footY-19,1,1,'#1c1024');
+    }
+
+    function drawSurfer(cx, footY, o){
+      R(cx,footY,20,3,o.board); R(cx+2,footY+1,16,1,'#ffffff');
+      R(cx+6,footY-3,3,3,o.suit); R(cx+11,footY-3,3,3,o.suit);
+      R(cx+6,footY-13,9,10,o.suit);            // body
+      R(cx+4,footY-19,8,7,'#f0c088');          // head (skin)
+      R(cx+4,footY-20,8,2,o.hair);             // hair top
+      if(o.girl){ R(cx+10,footY-19,3,12,o.hair); }   // long hair down the back
+      else       { R(cx+10,footY-19,2,3,o.hair); }   // short
+      R(cx+5,footY-16,1,1,'#1c1024');          // eye (facing left)
+      R(cx+2,footY-11,3,2,'#f0c088');          // arm
+    }
+
+    function drawBubble(cx, o){
+      const b=o.bubble; if(!b) return;
+      ctx.font='bold 9px "Courier New", monospace';
+      ctx.textBaseline='top';
+      const tw = Math.max(ctx.measureText(b.text).width, b.tag?ctx.measureText('('+b.tag+')').width:0);
+      const bw = (tw|0)+8, bh = b.tag?21:13;
+      let x = cx+10 - bw/2;
+      x = Math.max(2, Math.min(W-bw-2, x));
+      const y = 42;
+      R(x-1,y-1,bw+2,bh+2,'#1c1024');
+      R(x,y,bw,bh,'#ffffff');
+      // tail toward surfer
+      const tailX = Math.max(x+2, Math.min(x+bw-6, cx+8));
+      R(tailX,y+bh,4,3,'#ffffff'); R(tailX,y+bh+3,4,1,'#1c1024');
+      ctx.fillStyle='#1c1024'; ctx.textAlign='center';
+      ctx.fillText(b.text, x+bw/2, y+2);
+      if(b.tag){
+        ctx.font='bold 7px "Courier New", monospace'; ctx.fillStyle='#8b3fd9';
+        ctx.fillText('('+b.tag+')', x+bw/2, y+12);
+      }
+      ctx.textAlign='left';
+    }
+
+    function drawHUD(){
+      ctx.font='bold 9px "Courier New", monospace';
+      ctx.textBaseline='top'; ctx.textAlign='left';
+      const s='SURFERS DODGED: '+score;
+      ctx.fillStyle='#0a1f4a'; ctx.fillText(s,5,5);
+      ctx.fillStyle='#ffef8f'; ctx.fillText(s,4,4);
+    }
+
+    // ---- main loop ----
+    function frameStep(now){
+      const dt = t0 ? Math.min(2,(now-t0)/16.67) : 1; t0=now;
+
+      if(state==='play'){
+        foam += speed*dt;
+        speed = Math.min(3.7, 1.4 + score*0.04);
+
+        // physics
+        if(!onGround){ h += vh*dt; vh -= GRAV*dt; if(h<=0){h=0;vh=0;onGround=true;} }
+        const footYb = BASE - h;
+
+        // spawn
+        distToSpawn -= speed*dt;
+        if(distToSpawn<=0){ spawn(); distToSpawn = 108 + Math.random()*(96 - Math.min(50,score*1.2)); }
+
+        // move obstacles + score + collide
+        const bRect={x:BX+6,y:footYb-12,w:10,h:12};
+        for(const o of obstacles){
+          o.x -= speed*dt;
+          if(o.bubble){ o.bubble.ttl -= dt; if(o.bubble.ttl<=0) o.bubble=null; }
+          const sRect={x:o.x+6,y:BASE-14,w:8,h:14};
+          if(bRect.x<sRect.x+sRect.w && bRect.x+bRect.w>sRect.x &&
+             bRect.y<sRect.y+sRect.h && bRect.y+bRect.h>sRect.y){
+            // crash
+            state='crash'; crashT=48;
+            for(let i=0;i<26;i++) splash.push({x:BX+10,y:BASE-6,vx:(Math.random()-0.5)*4,vy:-Math.random()*4-1});
+            break;
+          }
+          if(!o.scored && o.x+20 < BX){ o.scored=true; score++; nextName(o); }
+        }
+        obstacles = obstacles.filter(o=>o.x>-30);
+
+        if(bannerTimer>0){ bannerTimer-=dt; if(bannerTimer<=0) banner.classList.remove('show'); }
+      }
+      else if(state==='crash'){
+        foam += speed*0.3*dt;
+        for(const p of splash){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=0.3*dt; }
+        crashT-=dt;
+        if(crashT<=0){ endGame(); }
+      }
+
+      // ---- render ----
+      drawBackground();
+      for(const o of obstacles) drawSurfer(o.x, BASE, o);
+      const fb = BASE - h;
+      if(state==='crash'){
+        drawBarney(BX, BASE, true);
+        for(const p of splash) R(p.x, p.y, 2, 2, '#ffffff');
+      } else if(state!=='ready'){
+        drawBarney(BX, fb, false);
+      } else {
+        drawBarney(BX, BASE, false);
+      }
+      for(const o of obstacles) drawBubble(o.x, o);
+      if(state==='play'||state==='crash') drawHUD();
+
+      requestAnimationFrame(frameStep);
+    }
+
+    function endGame(){
+      state='over';
+      finalScoreEl.textContent = score;
+      banner.classList.remove('show');
+      overOv.hidden=false;
+    }
+
+    // ---- input ----
+    function inView(){
+      const r=frame.getBoundingClientRect();
+      return r.top < window.innerHeight && r.bottom > 0;
+    }
+    function act(){
+      if(state==='ready') startGame();
+      else if(state==='play') jump();
+    }
+    startBtn.addEventListener('click', e=>{ e.stopPropagation(); startGame(); });
+    againBtn.addEventListener('click', e=>{ e.stopPropagation(); startGame(); });
+    frame.addEventListener('pointerdown', e=>{
+      if(e.target===startBtn||e.target===againBtn) return;
+      e.preventDefault(); act();
+    });
+    window.addEventListener('keydown', e=>{
+      if(e.code==='Space'||e.code==='ArrowUp'||e.key===' '){
+        if(!inView() && state==='ready') return;
+        if(state==='over') return;
+        e.preventDefault(); act();
+      }
+    });
+
+    requestAnimationFrame(frameStep);
+  })();
+  </script>
 
 </body>
 </html>
