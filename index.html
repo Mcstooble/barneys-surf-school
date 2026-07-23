@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barney's Surf School</title>
+<style>
+  :root{
+    --ink:#111014;
+    --paper:rgba(255,255,255,0.86);
+    --line:rgba(255,255,255,0.35);
+    --dino:#8b3fd9;
+    --dino-light:#c9a6ff;
+    --dino-belly:#e7d3ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    background:#1a1440;
+    color:var(--paper);
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- CRT / scanline overlay ---------- */
+  .crt{
+    pointer-events:none;
+    position:fixed;inset:0;z-index:50;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.05) 0px,
+      rgba(255,255,255,0.05) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+    mix-blend-mode:overlay;
+    opacity:0.5;
+  }
+  .vignette{
+    pointer-events:none;
+    position:fixed;inset:0;z-index:49;
+    box-shadow: inset 0 0 220px rgba(0,0,0,0.65);
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 34px;
+    position:relative;z-index:10;
+  }
+  .logo{
+    font-weight:700;letter-spacing:-0.02em;font-size:20px;
+    text-transform:lowercase;
+  }
+  .status{
+    display:flex;align-items:center;gap:10px;
+    font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.08em;
+    text-transform:uppercase;color:rgba(255,255,255,0.8);
+  }
+  .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:#7CFF6B;
+    box-shadow:0 0 8px #7CFF6B, 0 0 16px #7CFF6B;
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1; transform:scale(1);}
+    50%{opacity:0.4; transform:scale(0.8);}
+  }
+
+  /* ---------- Marquee ---------- */
+  .marquee-wrap{
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;z-index:10;
+    background:rgba(0,0,0,0.08);
+  }
+  .marquee-track{
+    display:inline-block;
+    padding:4px 0;
+    animation:scrollLeft 16s linear infinite;
+  }
+  .marquee-track span{
+    font-size:clamp(2.4rem,9vw,7.5rem);
+    font-weight:700;
+    letter-spacing:-0.03em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.9);
+    padding-right:0.5em;
+  }
+  .marquee-track span.bullet{ color:rgba(255,255,255,0.55); font-weight:400; }
+  @keyframes scrollLeft{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+
+  /* ---------- Hero / sunset background ---------- */
+  .hero{
+    position:relative;
+    min-height:78vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.15), transparent 55%),
+      linear-gradient(
+        to bottom,
+        #2c1c66 0%,
+        #6a2f97 20%,
+        #c94fb0 42%,
+        #ff8a6b 58%,
+        #ffd08a 66%,
+        #7a2e6e 68%,
+        #4a1f5e 78%,
+        #2a1240 100%
+      );
+    overflow:hidden;
+  }
+  .dither{
+    position:absolute;inset:0;
+    background-image:radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+    background-size:4px 4px;
+    opacity:0.5;
+    mix-blend-mode:overlay;
+  }
+  .waves{
+    position:absolute;left:0;right:0;bottom:0;height:34%;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.08) 0px,
+      rgba(255,255,255,0.08) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+    opacity:0.7;
+  }
+  .sun{
+    position:absolute;left:50%;top:8%;transform:translateX(-50%);
+    width:120px;height:120px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #fff6d6, #ffd08a 55%, #ff8a6b 100%);
+    box-shadow:0 0 60px rgba(255,180,120,0.5);
+    opacity:0.85;
+  }
+
+  /* ---------- Spinning board ---------- */
+  .board-stage{
+    position:relative;z-index:2;
+    perspective:1400px;
+    margin-top:10px;
+  }
+  .board{
+    width:100px;height:340px;
+    position:relative;
+    transform-style:preserve-3d;
+    animation:spin 5.5s linear infinite;
+  }
+  .board-face{
+    position:absolute;inset:0;
+    border-radius:50px 50px 20px 20px / 90px 90px 20px 20px;
+    background:linear-gradient(to bottom, #fdf8ee, #f1e6cf 60%, #fdf8ee);
+    box-shadow:0 0 40px rgba(0,0,0,0.35), inset 0 0 20px rgba(0,0,0,0.08);
+    backface-visibility:visible;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .stripe{
+    position:absolute;left:50%;top:6%;bottom:6%;
+    width:14px;transform:translateX(-50%);
+    background:linear-gradient(to bottom, var(--dino), var(--dino-light));
+    border-radius:8px;
+  }
+  .board-text{
+    position:absolute;top:12%;left:50%;transform:translateX(-50%) rotate(90deg);
+    font-family:'Courier New',monospace;font-size:9px;letter-spacing:0.2em;
+    color:rgba(0,0,0,0.35);white-space:nowrap;transform-origin:center;
+  }
+  @keyframes spin{
+    from{transform:rotateY(0deg);}
+    to{transform:rotateY(360deg);}
+  }
+
+  /* little pixel dino sitting on the board */
+  .dino{
+    position:relative;z-index:3;margin-top:-26px;
+  }
+  .dino svg{ width:64px;height:64px; filter:drop-shadow(0 6px 10px rgba(0,0,0,0.4)); }
+
+  .scroll-cue{
+    position:absolute;left:26px;bottom:22px;z-index:3;
+    font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.08em;
+    text-transform:uppercase;color:rgba(255,255,255,0.75);max-width:200px;
+  }
+
+  /* ---------- retro device (casio-style) ---------- */
+  .device{
+    position:absolute;left:26px;bottom:70px;z-index:3;
+    width:150px;
+    background:#161616;
+    border:3px solid #050505;
+    border-radius:14px;
+    padding:8px;
+    box-shadow:0 0 0 2px #3a3a3a, 0 10px 24px rgba(0,0,0,0.5);
+  }
+  .device-screen{
+    background:#cdd6c4;
+    color:#1c2a1c;
+    font-family:'Courier New',monospace;
+    font-size:9.5px;line-height:1.5;
+    padding:8px;border-radius:6px;
+    letter-spacing:0.02em;
+  }
+  .device-label{
+    text-align:center;font-family:'Courier New',monospace;
+    font-size:8px;letter-spacing:0.15em;color:#999;margin-top:6px;
+  }
+
+  /* ---------- footer info block ---------- */
+  .info-block{
+    position:absolute;right:26px;bottom:22px;z-index:3;
+    max-width:340px;text-align:right;
+    font-family:'Courier New',monospace;font-size:10.5px;line-height:1.6;
+    color:rgba(255,255,255,0.75);
+  }
+  .info-block .highlight{ background:rgba(255,255,255,0.18); padding:0 3px; }
+
+  /* ---------- session (game) section ---------- */
+  .session{
+    min-height:60vh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;
+    background:linear-gradient(to bottom, #2a1240, #150a24);
+    position:relative;z-index:2;
+    padding:60px 20px;
+    text-align:center;
+  }
+  .session h2{
+    font-family:'Courier New',monospace;
+    text-transform:uppercase;letter-spacing:0.15em;font-size:14px;
+    color:rgba(255,255,255,0.6);
+  }
+  .game-frame{
+    width:min(720px,92vw);
+    aspect-ratio:16/9;
+    border:2px solid rgba(255,255,255,0.4);
+    border-radius:10px;
+    background:
+      repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 6px),
+      linear-gradient(to bottom, #4a2a7a, #1c0e35);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Courier New',monospace;letter-spacing:0.1em;
+    color:rgba(255,255,255,0.55);font-size:13px;
+  }
+
+  @media (max-width:640px){
+    .device, .info-block{ position:static; margin:14px auto; text-align:center; }
+    .info-block{ margin-top:20px; }
+    header{padding:16px 18px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="crt"></div>
+  <div class="vignette"></div>
+
+  <header>
+    <div class="logo">barney's&nbsp;surf&nbsp;school</div>
+    <div class="status"><span class="dot"></span> session open</div>
+  </header>
+
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span>Barney's Surf School Is In Session</span><span class="bullet">●</span>
+      <span>Barney's Surf School Is In Session</span><span class="bullet">●</span>
+      <span>Barney's Surf School Is In Session</span><span class="bullet">●</span>
+      <span>Barney's Surf School Is In Session</span><span class="bullet">●</span>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="dither"></div>
+    <div class="sun"></div>
+    <div class="waves"></div>
+
+    <div class="board-stage">
+      <div class="board">
+        <div class="board-face">
+          <div class="stripe"></div>
+          <div class="board-text">BARNEY'S SURF SCHOOL — NEW BOARD DAY</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dino">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <g fill="#8b3fd9">
+          <rect x="3" y="9" width="7" height="4"/>
+          <rect x="9" y="6" width="4" height="7"/>
+          <rect x="6" y="3" width="6" height="4"/>
+          <rect x="11" y="4" width="2" height="2"/>
+          <rect x="2" y="12" width="2" height="2"/>
+          <rect x="6" y="13" width="2" height="2"/>
+          <rect x="9" y="13" width="2" height="2"/>
+          <rect x="9" y="1" width="2" height="2"/>
+          <rect x="11" y="2" width="2" height="2"/>
+        </g>
+        <rect x="12" y="5" width="1" height="1" fill="#150a24"/>
+        <g fill="#e7d3ff">
+          <rect x="4" y="10" width="4" height="2"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="scroll-cue">Scroll down<br>to access the session</div>
+
+    <div class="device">
+      <div class="device-screen">
+        SWELL&nbsp;&nbsp;3-4FT<br>
+        WIND&nbsp;&nbsp;&nbsp;OFFSHORE<br>
+        WATER&nbsp;&nbsp;68°F<br>
+        TIDE&nbsp;&nbsp;&nbsp;&nbsp;RISING<br>
+        BOARD&nbsp;&nbsp;NEW ✓
+      </div>
+      <div class="device-label">SURF WATCH — WATER RESIST</div>
+    </div>
+
+    <div class="info-block">
+      V.01 —————————— WELCOME TO BARNEY'S SURF SCHOOL —————————— //<br>
+      SOME OF US GAME TOGETHER AND GOT YOU A LITTLE SOMETHING.<br>
+      FINISH THE <span class="highlight">SESSION</span> BELOW TO CLAIM YOUR GIFT.
+    </div>
+  </section>
+
+  <section class="session" id="session">
+    <h2>— The Session —</h2>
+    <div class="game-frame">SESSION LOADING SOON…</div>
+  </section>
+
+</body>
+</html>
