@@ -154,49 +154,25 @@
     opacity:0.85;
   }
 
-  /* ---------- Spinning board ---------- */
+  /* ---------- Spinning mascot ---------- */
   .board-stage{
     position:relative;z-index:2;
     perspective:1400px;
     margin-top:10px;
   }
-  .board{
-    width:clamp(64px,11vw,100px);height:clamp(200px,42vh,340px);
-    position:relative;
+  .mascot{
+    width:clamp(150px,26vw,230px);
     animation:spin 4.5s ease-in-out infinite;
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,0.4));
   }
-  .board-face{
-    position:absolute;inset:0;
-    border-radius:50px 50px 20px 20px / 90px 90px 20px 20px;
-    background:linear-gradient(to bottom, #fdf8ee, #f1e6cf 60%, #fdf8ee);
-    box-shadow:0 0 40px rgba(0,0,0,0.35), inset 0 0 20px rgba(0,0,0,0.08);
-    backface-visibility:visible;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .stripe{
-    position:absolute;left:50%;top:6%;bottom:6%;
-    width:14px;transform:translateX(-50%);
-    background:linear-gradient(to bottom, var(--dino), var(--dino-light));
-    border-radius:8px;
-  }
-  .board-text{
-    position:absolute;top:12%;left:50%;transform:translateX(-50%) rotate(90deg);
-    font-family:'Courier New',monospace;font-size:9px;letter-spacing:0.2em;
-    color:rgba(0,0,0,0.35);white-space:nowrap;transform-origin:center;
-  }
+  .mascot svg{ width:100%; height:auto; display:block; }
   @keyframes spin{
     0%{transform:scaleX(1);}
-    23%{transform:scaleX(0.12);}
+    23%{transform:scaleX(0.14);}
     50%{transform:scaleX(-1);}
-    77%{transform:scaleX(-0.12);}
+    77%{transform:scaleX(-0.14);}
     100%{transform:scaleX(1);}
   }
-
-  /* little pixel dino sitting on the board */
-  .dino{
-    position:relative;z-index:3;margin-top:-26px;
-  }
-  .dino svg{ width:64px;height:64px; filter:drop-shadow(0 6px 10px rgba(0,0,0,0.4)); }
 
   .scroll-cue{
     position:absolute;left:26px;bottom:22px;z-index:3;
@@ -277,12 +253,11 @@
     .logo{ font-size:16px; }
     .status{ font-size:10px; }
     .marquee-track span{ padding-right:0.4em; }
-    .board{ margin-top:-6px; }
+    .mascot{ margin-top:-6px; }
   }
 
   @media (max-width:420px){
-    .board{ width:56px; height:180px; }
-    .dino svg{ width:52px;height:52px; }
+    .mascot{ width:130px; }
     .device{ width:150px; font-size:9px; }
   }
 </style>
@@ -312,32 +287,56 @@
     <div class="waves"></div>
 
     <div class="board-stage">
-      <div class="board">
-        <div class="board-face">
-          <div class="stripe"></div>
-          <div class="board-text">BARNEY'S SURF SCHOOL — NEW BOARD DAY</div>
-        </div>
+      <div class="mascot">
+        <svg viewBox="0 0 200 270" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="118" cy="252" rx="70" ry="10" fill="#000" opacity="0.18"/>
+          <!-- tail -->
+          <path d="M158,168 Q206,158 200,108 Q198,150 158,152 Z" fill="#7a35c2"/>
+          <!-- back leg -->
+          <ellipse cx="152" cy="222" rx="24" ry="18" fill="#8b3fd9"/>
+          <rect x="132" y="234" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <rect x="147" y="238" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <rect x="162" y="234" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <!-- front leg -->
+          <ellipse cx="82" cy="226" rx="26" ry="20" fill="#9d52e0"/>
+          <rect x="60" y="240" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <rect x="76" y="244" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <rect x="92" y="240" width="10" height="12" rx="4" fill="#ffd35c"/>
+          <!-- body -->
+          <ellipse cx="112" cy="150" rx="72" ry="82" fill="#9d52e0"/>
+          <!-- belly -->
+          <ellipse cx="108" cy="176" rx="44" ry="56" fill="#3fae55"/>
+          <!-- surfboard -->
+          <g transform="rotate(-10 108 165)">
+            <rect x="86" y="55" width="38" height="205" rx="19" fill="#ff8a1e"/>
+            <rect x="86" y="55" width="38" height="205" rx="19" fill="url(#boardShine)"/>
+            <rect x="101" y="66" width="8" height="184" rx="4" fill="#e8433d"/>
+          </g>
+          <!-- arms over board -->
+          <ellipse cx="66" cy="168" rx="21" ry="32" fill="#8b3fd9"/>
+          <ellipse cx="152" cy="164" rx="21" ry="32" fill="#8b3fd9"/>
+          <rect x="55" y="192" width="22" height="16" rx="8" fill="#c9a6ff"/>
+          <rect x="140" y="188" width="22" height="16" rx="8" fill="#c9a6ff"/>
+          <!-- head -->
+          <circle cx="114" cy="66" r="58" fill="#9d52e0"/>
+          <!-- eyes -->
+          <ellipse cx="92" cy="55" rx="15" ry="17" fill="#fff"/>
+          <ellipse cx="140" cy="53" rx="15" ry="17" fill="#fff"/>
+          <circle cx="95" cy="59" r="7.5" fill="#1c1024"/>
+          <circle cx="143" cy="57" r="7.5" fill="#1c1024"/>
+          <circle cx="92.5" cy="56" r="2.4" fill="#fff"/>
+          <circle cx="140.5" cy="54" r="2.4" fill="#fff"/>
+          <!-- snout / smile -->
+          <path d="M84,88 Q114,112 146,86 Q140,104 114,106 Q88,104 84,88 Z" fill="#7a2fb8"/>
+          <path d="M92,92 Q114,104 138,90" stroke="#4a1f6e" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="boardShine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.25"/>
+              <stop offset="0.4" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
-    </div>
-
-    <div class="dino">
-      <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <g fill="#8b3fd9">
-          <rect x="3" y="9" width="7" height="4"/>
-          <rect x="9" y="6" width="4" height="7"/>
-          <rect x="6" y="3" width="6" height="4"/>
-          <rect x="11" y="4" width="2" height="2"/>
-          <rect x="2" y="12" width="2" height="2"/>
-          <rect x="6" y="13" width="2" height="2"/>
-          <rect x="9" y="13" width="2" height="2"/>
-          <rect x="9" y="1" width="2" height="2"/>
-          <rect x="11" y="2" width="2" height="2"/>
-        </g>
-        <rect x="12" y="5" width="1" height="1" fill="#150a24"/>
-        <g fill="#e7d3ff">
-          <rect x="4" y="10" width="4" height="2"/>
-        </g>
-      </svg>
     </div>
 
     <div class="scroll-cue">Scroll down<br>to access the session</div>
