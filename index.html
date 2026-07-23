@@ -101,46 +101,54 @@
   .hero{
     position:relative;
     min-height:78vh;
+    min-height:90svh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.15), transparent 55%),
       linear-gradient(
         to bottom,
-        #2c1c66 0%,
-        #6a2f97 20%,
-        #c94fb0 42%,
-        #ff8a6b 58%,
-        #ffd08a 66%,
-        #7a2e6e 68%,
-        #4a1f5e 78%,
-        #2a1240 100%
+        #2c1c66 0%, #2c1c66 10%,
+        #45256f 10%, #45256f 18%,
+        #6a2f97 18%, #6a2f97 27%,
+        #9a3ba8 27%, #9a3ba8 36%,
+        #c94fb0 36%, #c94fb0 44%,
+        #e8709a 44%, #e8709a 50%,
+        #ff8a6b 50%, #ff8a6b 56%,
+        #ffb37a 56%, #ffb37a 61%,
+        #ffd08a 61%, #ffd08a 65%,
+        #a3437e 65%, #a3437e 70%,
+        #7a2e6e 70%, #7a2e6e 78%,
+        #4a1f5e 78%, #4a1f5e 88%,
+        #2a1240 88%, #2a1240 100%
       );
+    image-rendering:pixelated;
     overflow:hidden;
   }
   .dither{
     position:absolute;inset:0;
-    background-image:radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-    background-size:4px 4px;
-    opacity:0.5;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.22) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,0.16) 0 3px, transparent 3px 6px),
+      radial-gradient(rgba(255,255,255,0.14) 1.5px, transparent 1.5px);
+    background-size:6px 6px, 6px 6px, 5px 5px;
     mix-blend-mode:overlay;
   }
   .waves{
     position:absolute;left:0;right:0;bottom:0;height:34%;
     background:repeating-linear-gradient(
       to bottom,
-      rgba(255,255,255,0.08) 0px,
-      rgba(255,255,255,0.08) 2px,
-      transparent 2px,
-      transparent 10px
+      rgba(255,255,255,0.14) 0px,
+      rgba(255,255,255,0.14) 3px,
+      transparent 3px,
+      transparent 9px
     );
-    opacity:0.7;
+    opacity:0.8;
   }
   .sun{
     position:absolute;left:50%;top:8%;transform:translateX(-50%);
-    width:120px;height:120px;border-radius:50%;
+    width:clamp(70px,16vw,120px);height:clamp(70px,16vw,120px);border-radius:50%;
     background:radial-gradient(circle at 40% 35%, #fff6d6, #ffd08a 55%, #ff8a6b 100%);
     box-shadow:0 0 60px rgba(255,180,120,0.5);
     opacity:0.85;
@@ -153,10 +161,9 @@
     margin-top:10px;
   }
   .board{
-    width:100px;height:340px;
+    width:clamp(64px,11vw,100px);height:clamp(200px,42vh,340px);
     position:relative;
-    transform-style:preserve-3d;
-    animation:spin 5.5s linear infinite;
+    animation:spin 4.5s ease-in-out infinite;
   }
   .board-face{
     position:absolute;inset:0;
@@ -178,8 +185,11 @@
     color:rgba(0,0,0,0.35);white-space:nowrap;transform-origin:center;
   }
   @keyframes spin{
-    from{transform:rotateY(0deg);}
-    to{transform:rotateY(360deg);}
+    0%{transform:scaleX(1);}
+    23%{transform:scaleX(0.12);}
+    50%{transform:scaleX(-1);}
+    77%{transform:scaleX(-0.12);}
+    100%{transform:scaleX(1);}
   }
 
   /* little pixel dino sitting on the board */
@@ -231,7 +241,11 @@
     min-height:60vh;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:18px;
-    background:linear-gradient(to bottom, #2a1240, #150a24);
+    background:
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.18) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,0.05) 0 3px, transparent 3px 6px),
+      linear-gradient(to bottom, #2a1240 0%, #2a1240 40%, #1c0e35 40%, #1c0e35 75%, #150a24 75%, #150a24 100%);
+    background-size:6px 6px, 6px 6px, auto;
     position:relative;z-index:2;
     padding:60px 20px;
     text-align:center;
@@ -254,10 +268,22 @@
     color:rgba(255,255,255,0.55);font-size:13px;
   }
 
-  @media (max-width:640px){
-    .device, .info-block{ position:static; margin:14px auto; text-align:center; }
-    .info-block{ margin-top:20px; }
-    header{padding:16px 18px;}
+  @media (max-width:780px){
+    .hero{ padding-bottom:24px; }
+    .device, .info-block, .scroll-cue{ position:static; margin:10px auto; text-align:center; max-width:280px; }
+    .info-block{ margin-top:18px; text-align:center; }
+    .device{ width:170px; }
+    header{ padding:16px 18px; }
+    .logo{ font-size:16px; }
+    .status{ font-size:10px; }
+    .marquee-track span{ padding-right:0.4em; }
+    .board{ margin-top:-6px; }
+  }
+
+  @media (max-width:420px){
+    .board{ width:56px; height:180px; }
+    .dino svg{ width:52px;height:52px; }
+    .device{ width:150px; font-size:9px; }
   }
 </style>
 </head>
